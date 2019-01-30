@@ -20,4 +20,8 @@ func main() {
 	vals.Set("since", startdate)
 
 	fmt.Println(vals.Encode())
+
+	t1 := time.Now()
+	fmt.Println(t1.AddDate(0, 0, 7))
+	fmt.Println(t1.AddDate(0, 0, 7).Format("2006-01-02"))
 }
