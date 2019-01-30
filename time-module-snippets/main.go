@@ -24,4 +24,8 @@ func main() {
 	t1 := time.Now()
 	fmt.Println(t1.AddDate(0, 0, 7))
 	fmt.Println(t1.AddDate(0, 0, 7).Format("2006-01-02"))
+	if _, err := time.Parse("2006-01-02", "2019-01-37"); err != nil {
+		fmt.Println(err)
+	}
+
 }
