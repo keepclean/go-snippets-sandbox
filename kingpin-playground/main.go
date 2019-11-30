@@ -1,6 +1,9 @@
 package main
 
 import (
+	"fmt"
+	"io/ioutil"
+	"net/url"
 	"os"
 
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
@@ -26,11 +29,23 @@ var (
 	app           = kingpin.New("myapp", "help me")
 	create        = app.Command("create", "initial create/deploy of an app")
 	createOptions = newCreateUpdateOptions(create)
+
 	update        = app.Command("update", "update definition of an app (automatically deploys new definition)")
 	updateOptions = newCreateUpdateOptions(update)
+
+	urlCheck = app.Command("check-url", "URL for checking")
+	urlFlag  = urlCheck.Flag("url", "URL").Default("http://example.com/").URL()
 )
 
 func main() {
 	kingpin.Version("0.0.1")
-	kingpin.MustParse(app.Parse(os.Args[1:]))
+	switch kingpin.MustParse(app.Parse(os.Args[1:])) {
+	case urlCheck.FullCommand():
+		fmt.Println(*urlFlag)
+		path := &url.URL{Path: "/path"}
+		u := *urlFlag
+		fmt.Println(u.ResolveReference(path))
+	}
+
+	fmt.Fprintln(ioutil.Discard, createOptions, updateOptions)
 }
