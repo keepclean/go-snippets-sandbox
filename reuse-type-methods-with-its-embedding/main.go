@@ -32,6 +32,7 @@ func (f FileAsset) String() string {
 func (f FileAsset) Exist() bool {
 	_, err := os.Stat(f.ExpandPath())
 	if err != nil && os.IsNotExist(err) {
+		fmt.Println(f)
 		return false
 	} else if err != nil {
 		log.Println("non-IsNotExist error upon calling os.Stat:", err)
@@ -42,7 +43,7 @@ func (f FileAsset) Exist() bool {
 }
 
 func (f FileAsset) ExpandPath() string {
-	return os.ExpandEnv(f.String())
+	return os.ExpandEnv(f.Path)
 }
 
 func (f FileAsset) DirName() string {
