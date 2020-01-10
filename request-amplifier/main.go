@@ -56,28 +56,35 @@ func (m Multiplier) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	httpClient := &http.Client{Timeout: time.Second * 10}
-
 	for i := range []int{0, 1, 2} {
-		log.Println("attempt #", i)
-		u := fmt.Sprintf("http://%s%s", r.Host, r.URL.String())
-		req, err := http.NewRequest(r.Method, u, nil)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			log.Println(http.StatusInternalServerError, err)
-			return
-		}
-
-		resp, err := httpClient.Do(req)
-		if err != nil {
-			log.Println(err)
-			return
-		}
-		defer io.Copy(ioutil.Discard, resp.Body)
-
-		log.Println("recieved response for attempt #", i, ":", resp.StatusCode, resp.Status)
-		// w.WriteHeader(resp.StatusCode)
+		go sendRequest(r, i)
 	}
 
 	w.WriteHeader(http.StatusOK)
+}
+
+func sendRequest(r *http.Request, i int) {
+	httpClient := &http.Client{Timeout: time.Second * 10}
+	log.Println("request #", i)
+	u := fmt.Sprintf("http://%s%s", r.Host, r.URL.String())
+	req, err := http.NewRequest(r.Method, u, nil)
+	if err != nil {
+		log.Println(http.StatusInternalServerError, err)
+		return
+	}
+	req.Header = r.Header
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	defer func() {
+		if _, err := io.CopyN(ioutil.Discard, resp.Body, 4096); err != nil {
+			log.Println("drain response body:", err)
+		}
+		resp.Body.Close()
+	}()
+
+	log.Println("recieved response for attempt #", i, ":", resp.Status)
 }
