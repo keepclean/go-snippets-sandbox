@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"fmt"
 	"io"
@@ -9,14 +10,16 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 )
 
 func main() {
+	h := &Multiplier{ControlFile: "./control.file"}
 	srv := &http.Server{
 		Addr:              ":8888",
-		Handler:           Multiplier{},
+		Handler:           h,
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 
@@ -35,6 +38,13 @@ func main() {
 		close(idleConnsClosed)
 	}()
 
+	go func() {
+		for {
+			h.Control()
+			time.Sleep(time.Second * 10)
+		}
+	}()
+
 	if err := srv.ListenAndServe(); err != http.ErrServerClosed {
 		log.Printf("HTTP server ListenAndServe: %v", err)
 	}
@@ -42,7 +52,28 @@ func main() {
 	<-idleConnsClosed
 }
 
-type Multiplier struct{}
+type Multiplier struct {
+	ControlFile        string
+	AmplificationLevel int
+}
+
+func (m *Multiplier) Control() {
+	fd, err := os.Open(m.ControlFile)
+	if err != nil {
+		log.Println("can not open control file:", err)
+		return
+	}
+	defer fd.Close()
+
+	b := bufio.NewScanner(fd)
+	b.Scan()
+	l, err := strconv.Atoi(b.Text())
+	if err != nil {
+		log.Println("can not read control file:", err)
+		return
+	}
+	m.AmplificationLevel = l
+}
 
 func (m Multiplier) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodGet {
@@ -56,7 +87,7 @@ func (m Multiplier) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	for i := range []int{0, 1, 2} {
+	for i := 0; i < m.AmplificationLevel; i++ {
 		go sendRequest(r, i)
 	}
 
