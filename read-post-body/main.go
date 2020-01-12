@@ -13,6 +13,7 @@ type timeoutHandler struct{}
 func (h timeoutHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	bodyBytes := make([]byte, 0)
 	z := bytes.NewBuffer(bodyBytes)
+	r.Body = http.MaxBytesReader(w, r.Body, 1024*1024)
 	for {
 		_, err := io.CopyN(z, r.Body, 256)
 		// bodyBytes = append(bodyBytes, z.Bytes())
