@@ -37,8 +37,6 @@ func main() {
 	}
 	defer file.Close()
 
-	// var payload io.ReadSeeker = file
-
 	for {
 		sendRequest(client, &url, &contentType, file)
 		if _, err := file.Seek(0, 0); err != nil {
